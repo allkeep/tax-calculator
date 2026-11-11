@@ -1,0 +1,19 @@
+# OS & Editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Logs & temporary files
+*.log
+*.tmp
+
+# Sensitive local payroll spreadsheets (prevent accidental upload)
+*.xls
+*.xlsx
+*.xlsm
+*.xlsb
+*.csv

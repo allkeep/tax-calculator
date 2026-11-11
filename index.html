@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工资个税计算器</title>
+  <link rel="stylesheet" href="./styles.css?v=20260722-collapse-hide-fix-2">
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div>
+        <h1>工资个税计算器</h1>
+        <p>支持单月税前正算、税后反推，以及全年累计测算。</p>
+        <p>五险一金、专项附加扣除和其他扣除都可以按你的实际口径调整。</p>
+      </div>
+    </section>
+
+    <div class="tabs" role="tablist" aria-label="计算模式">
+      <button type="button" class="tab-button is-active" data-tab-target="monthly-panel">单月计算</button>
+      <button type="button" class="tab-button" data-tab-target="annual-panel">全年测算</button>
+    </div>
+
+    <section id="monthly-panel" class="panel is-active">
+      <details class="compact-details">
+        <summary>
+          <span>导入 Excel（可选）</span>
+          <span class="import-badge" id="excel-badge">未导入文件</span>
+        </summary>
+        <div class="compact-details-body">
+          <p class="subtle">支持本地 `.xls / .xlsx / .xlsm / .xlsb`。导入后可以按“工作表 + 员工记录”选择，并自动回填当前月和累计参数。</p>
+          <div class="field-grid columns-3">
+            <div class="field">
+              <label for="excel-file">选择工资税表</label>
+              <input id="excel-file" type="file" accept=".xls,.xlsx,.xlsm,.xlsb">
+            </div>
+            <div class="field">
+              <label for="excel-sheet">工作表</label>
+              <select id="excel-sheet" disabled>
+                <option value="">请先选择文件</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="excel-row">员工记录</label>
+              <select id="excel-row" disabled>
+                <option value="">请先导入工作表</option>
+              </select>
+            </div>
+          </div>
+          <div class="button-row">
+            <button type="button" class="secondary" id="excel-fill-monthly" disabled>导入到单月</button>
+          </div>
+          <div class="summary-box" id="excel-summary" style="margin-top: 12px;">选择 Excel 后，这里会显示识别到的工作表、员工人数和字段匹配情况。</div>
+        </div>
+      </details>
+
+      <div class="card">
+        <h2>单月计算</h2>
+        <p class="subtle">先选择输入口径，再输入本月金额。税后模式用于反推税前，税前模式用于正算当月个税和到手工资。</p>
+        <div class="calc-bar">
+          <div class="field">
+            <label for="m-month">当前月份</label>
+            <input id="m-month" type="number" min="1" max="12" step="1" value="3">
+          </div>
+          <div class="field">
+            <label>输入口径</label>
+            <div class="mode-switch" role="tablist" aria-label="单月输入口径">
+              <button type="button" class="mode-button is-active" id="m-mode-gross" data-monthly-mode="gross">税前工资</button>
+              <button type="button" class="mode-button" id="m-mode-net" data-monthly-mode="net">税后工资</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="m-primary-amount" id="m-primary-label">税前工资</label>
+            <input id="m-primary-amount" type="text" inputmode="decimal" value="">
+            <small id="m-primary-help">输入本月税前工资后，工具会直接计算本期个税和税后工资。</small>
+          </div>
+          <div class="field calc-action">
+            <label>操作</label>
+            <div class="button-row">
+              <button type="button" class="primary" id="calc-monthly">计算个税</button>
+              <button type="button" class="ghost" id="reset-monthly">重置单月参数</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid monthly-sections">
+        <div class="card collapsible-card monthly-params-card">
+          <h2><button type="button" class="section-toggle" data-collapse-toggle data-section-title="本期参数" aria-expanded="true">▾</button><span>本期参数</span></h2>
+          <p class="subtle">社保与公积金支持“金额 / 比例 / 基数”联动。你可以直接填金额，也可以填比例和基数；如果手填金额，工具会自动反算比例。</p>
+          <div class="field-grid compact-params">
+            <div class="field">
+              <label for="m-tax-free">本期免税收入</label>
+              <input id="m-tax-free" type="text" inputmode="decimal" value="0.00">
+            </div>
+            <div class="field">
+              <label for="m-deduction">本期减除费用</label>
+              <input id="m-deduction" type="text" inputmode="decimal" value="5000.00">
+            </div>
+            <div class="field">
+              <label for="m-special-add">本期专项附加扣除</label>
+              <input id="m-special-add" type="text" inputmode="decimal" value="0.00">
+            </div>
+            <div class="field">
+              <label for="m-other-tax-ded">本期其他税前扣除</label>
+              <input id="m-other-tax-ded" type="text" inputmode="decimal" value="0.00">
+              <small>如商业健康保险、税延养老保险等依法确定的其他扣除。</small>
+            </div>
+            <div class="field">
+              <label for="m-tax-reduction">本期减免税额</label>
+              <input id="m-tax-reduction" type="text" inputmode="decimal" value="0.00">
+            </div>
+            <div class="field">
+              <label for="m-current-special-deduction">本期专项扣除合计</label>
+              <input id="m-current-special-deduction" type="text" inputmode="decimal" value="">
+              <small>可手填，也可由社保公积金自动汇总。</small>
+            </div>
+          </div>
+          <div class="summary-box" style="margin-top: 14px;">
+            <strong>社保公积金联动：</strong>社保基数会同时作用于养老、医疗、失业；公积金基数单独计算。比例按百分数填写，例如 `8` 表示 `8%`。
+          </div>
+          <div class="field-grid" style="margin-top: 14px;">
+            <div class="field">
+              <label for="m-social-base">社保基数</label>
+              <input id="m-social-base" type="text" inputmode="decimal" value="0.00">
+            </div>
+            <div class="field">
+              <label for="m-housing-base">公积金基数</label>
+              <input id="m-housing-base" type="text" inputmode="decimal" value="0.00">
+            </div>
+          </div>
+          <div class="social-grid">
+            <div class="social-row">
+              <div class="social-label">养老保险<small>金额与比例双向联动</small></div>
+              <div class="field-inline">
+                <label for="m-pension">本期金额</label>
+                <input id="m-pension" type="text" inputmode="decimal" value="0.00">
+              </div>
+              <div class="field-inline">
+                <label for="m-pension-rate">个人比例（%）</label>
+                <input id="m-pension-rate" type="text" inputmode="decimal" value="">
+              </div>
+            </div>
+            <div class="social-row">
+              <div class="social-label">医疗保险<small>金额与比例双向联动</small></div>
+              <div class="field-inline">
+                <label for="m-medical">本期金额</label>
+                <input id="m-medical" type="text" inputmode="decimal" value="0.00">
+              </div>
+              <div class="field-inline">
+                <label for="m-medical-rate">个人比例（%）</label>
+                <input id="m-medical-rate" type="text" inputmode="decimal" value="">
+              </div>
+            </div>
+            <div class="social-row">
+              <div class="social-label">失业保险<small>金额与比例双向联动</small></div>
+              <div class="field-inline">
+                <label for="m-unemployment">本期金额</label>
+                <input id="m-unemployment" type="text" inputmode="decimal" value="0.00">
+              </div>
+              <div class="field-inline">
+                <label for="m-unemployment-rate">个人比例（%）</label>
+                <input id="m-unemployment-rate" type="text" inputmode="decimal" value="">
+              </div>
+            </div>
+            <div class="social-row">
+              <div class="social-label">住房公积金<small>金额与比例双向联动</small></div>
+              <div class="field-inline">
+                <label for="m-housing">本期金额</label>
+                <input id="m-housing" type="text" inputmode="decimal" value="0.00">
+              </div>
+              <div class="field-inline">
+                <label for="m-housing-rate">个人比例（%）</label>
+                <input id="m-housing-rate" type="text" inputmode="decimal" value="">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card collapsible-card monthly-cumulative-card">
+          <h2><button type="button" class="section-toggle" data-collapse-toggle data-section-title="截至上月累计" aria-expanded="true">▾</button><span>截至上月累计</span></h2>
+          <p class="subtle">这些值填“截至上月”为止的累计数。如果你手上只有本月申报表，通常可以用“本月累计值 - 本月对应值”反推出来。</p>
+          <div class="field-grid compact-cumulative">
+            <div class="field">
+              <label for="m-prev-income">上期累计收入</label>
+              <input id="m-prev-income" type="text" inputmode="decimal" value="0.00">
+            </div>
+            <div class="field">
+              <label for="m-prev-tax-free">上期累计免税收入</label>
+              <input id="m-prev-tax-free" type="text" inputmode="decimal" value="0.00">
+            </div>
+            <div class="field">
+              <label for="m-prev-deduction">上期累计减除费用</label>
+              <input id="m-prev-deduction" type="text" inputmode="decimal" value="0.00">
+            </div>
+            <div class="field">
+              <label for="m-prev-special-ded">上期累计专项扣除</label>
+              <input id="m-prev-special-ded" type="text" inputmode="decimal" value="0.00">
+            </div>
+            <div class="field">
+              <label for="m-prev-special-add">上期累计专项附加扣除</label>
+              <input id="m-prev-special-add" type="text" inputmode="decimal" value="0.00">
+            </div>
+            <div class="field">
+              <label for="m-prev-other-ded">上期累计其他扣除</label>
+              <input id="m-prev-other-ded" type="text" inputmode="decimal" value="0.00">
+            </div>
+            <div class="field">
+              <label for="m-prev-tax-reduction">上期累计减免税额</label>
+              <input id="m-prev-tax-reduction" type="text" inputmode="decimal" value="0.00">
+            </div>
+            <div class="field">
+              <label for="m-prev-tax-paid">上期累计已预扣税额</label>
+              <input id="m-prev-tax-paid" type="text" inputmode="decimal" value="0.00">
+            </div>
+            <div class="field">
+              <label for="m-year-tax-burden">本年综合税负</label>
+              <input id="m-year-tax-burden" type="text" value="0.00%" readonly>
+              <small>按本月计算结果自动更新，口径为本年累计个税 / 本年累计收入。</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card collapsible-card">
+        <h2><button type="button" class="section-toggle" data-collapse-toggle data-section-title="单月结果" aria-expanded="true">▾</button><span>单月结果</span></h2>
+        <div class="results">
+          <div class="stat">
+            <span>税前工资</span>
+            <strong id="m-result-gross">0.00</strong>
+          </div>
+          <div class="stat">
+            <span>本期个税</span>
+            <strong id="m-result-tax">0.00</strong>
+          </div>
+          <div class="stat">
+            <span>税后工资</span>
+            <strong id="m-result-net">0.00</strong>
+          </div>
+          <div class="stat">
+            <span>累计应纳税所得额</span>
+            <strong id="m-result-taxable">0.00</strong>
+          </div>
+        </div>
+        <div class="results" style="margin-top: 12px;">
+          <div class="stat">
+            <span>适用预扣率</span>
+            <strong id="m-result-rate">0%</strong>
+          </div>
+          <div class="stat">
+            <span>速算扣除数</span>
+            <strong id="m-result-quick">0.00</strong>
+          </div>
+          <div class="stat">
+            <span>本期专项扣除合计</span>
+            <strong id="m-result-special">0.00</strong>
+          </div>
+          <div class="stat">
+            <span>本年综合税负</span>
+            <strong id="m-result-tax-burden">0.00%</strong>
+          </div>
+          <div class="stat">
+            <span>本期直接扣款合计</span>
+            <strong id="m-result-direct">0.00</strong>
+          </div>
+        </div>
+        <div class="hint" id="m-result-note" style="margin-top: 14px;">这里会显示结果说明。</div>
+        <div class="summary-box" id="m-formula-summary" style="margin-top: 12px;">等待计算。</div>
+        <div class="error" id="m-error"></div>
+      </div>
+
+      <details>
+        <summary>填表小提示</summary>
+        <p>如果你是从《综合所得申报税款计算》那张表抄数，通常可以这么整理：</p>
+        <ul>
+          <li>上期累计收入 = 当前行“累计收入额” - 本期收入</li>
+          <li>上期累计专项扣除 = 当前行“累计专项扣除” - 本期养老/医疗/失业/公积金/年金</li>
+          <li>上期累计专项附加扣除 = 当前行各项专项附加扣除累计合计 - 本期专项附加扣除</li>
+          <li>上期累计已预扣税额 = 当前行“已缴税额”</li>
+        </ul>
+      </details>
+    </section>
+
+    <section id="annual-panel" class="panel">
+      <div class="card collapsible-card">
+        <h2><button type="button" class="section-toggle" data-collapse-toggle data-section-title="全年批量设置" aria-expanded="true">▾</button><span>全年批量设置</span></h2>
+        <p class="subtle">年度模式假设从 1 月开始累计，适合做全年工资规划。这里的社保/公积金也支持“基数 + 比例”自动折算金额，批量填充后你仍然可以逐月微调。</p>
+        <div class="field-grid columns-3">
+          <div class="field"><label for="a-fill-target-net">统一税前收入</label><input id="a-fill-target-net" type="text" inputmode="decimal" value=""></div>
+          <div class="field"><label for="a-fill-deduction">统一减除费用</label><input id="a-fill-deduction" type="text" inputmode="decimal" value="5000.00"></div>
+          <div class="field"><label for="a-fill-special-add">统一专项附加扣除</label><input id="a-fill-special-add" type="text" inputmode="decimal" value="0.00"></div>
+          <div class="field"><label for="a-fill-social-base">统一社保基数</label><input id="a-fill-social-base" type="text" inputmode="decimal" value="0.00"></div>
+          <div class="field"><label for="a-fill-housing-base">统一公积金基数</label><input id="a-fill-housing-base" type="text" inputmode="decimal" value="0.00"></div>
+          <div class="field"><label for="a-fill-pension">统一养老保险</label><input id="a-fill-pension" type="text" inputmode="decimal" value="0.00"></div>
+          <div class="field"><label for="a-fill-pension-rate">养老比例（%）</label><input id="a-fill-pension-rate" type="text" inputmode="decimal" value=""></div>
+          <div class="field"><label for="a-fill-medical">统一医疗保险</label><input id="a-fill-medical" type="text" inputmode="decimal" value="0.00"></div>
+          <div class="field"><label for="a-fill-medical-rate">医疗比例（%）</label><input id="a-fill-medical-rate" type="text" inputmode="decimal" value=""></div>
+          <div class="field"><label for="a-fill-unemployment">统一失业保险</label><input id="a-fill-unemployment" type="text" inputmode="decimal" value="0.00"></div>
+          <div class="field"><label for="a-fill-unemployment-rate">失业比例（%）</label><input id="a-fill-unemployment-rate" type="text" inputmode="decimal" value=""></div>
+          <div class="field"><label for="a-fill-housing">统一住房公积金</label><input id="a-fill-housing" type="text" inputmode="decimal" value="0.00"></div>
+          <div class="field"><label for="a-fill-housing-rate">公积金比例（%）</label><input id="a-fill-housing-rate" type="text" inputmode="decimal" value=""></div>
+          <div class="field"><label for="a-fill-tax-free">统一免税收入</label><input id="a-fill-tax-free" type="text" inputmode="decimal" value="0.00"></div>
+          <div class="field"><label for="a-fill-other-tax-ded">统一其他税前扣除</label><input id="a-fill-other-tax-ded" type="text" inputmode="decimal" value="0.00"></div>
+          <div class="field"><label for="a-fill-tax-reduction">统一减免税额</label><input id="a-fill-tax-reduction" type="text" inputmode="decimal" value="0.00"></div>
+        </div>
+        <div class="button-row">
+          <button type="button" class="primary" id="apply-annual-fill">计算全年</button>
+          <button type="button" class="secondary" id="calc-annual">重新计算全年</button>
+          <button type="button" class="ghost" id="reset-annual">重置年度参数</button>
+        </div>
+      </div>
+
+      <div class="card collapsible-card">
+        <h2><button type="button" class="section-toggle" data-collapse-toggle data-section-title="逐月计算" aria-expanded="true">▾</button><span>逐月计算</span></h2>
+        <div class="annual-grid" id="annual-body"></div>
+        <div class="error" id="a-error"></div>
+      </div>
+
+      <div class="card collapsible-card">
+        <h2><button type="button" class="section-toggle" data-collapse-toggle data-section-title="年度汇总" aria-expanded="true">▾</button><span>年度汇总</span></h2>
+        <div class="year-summary">
+          <div class="stat"><span>全年税前收入</span><strong id="a-sum-gross">0.00</strong></div>
+          <div class="stat"><span>全年个税</span><strong id="a-sum-tax">0.00</strong></div>
+          <div class="stat"><span>全年到手</span><strong id="a-sum-net">0.00</strong></div>
+          <div class="stat"><span>全年专项扣除</span><strong id="a-sum-special">0.00</strong></div>
+          <div class="stat"><span>全年专项附加扣除</span><strong id="a-sum-special-add">0.00</strong></div>
+          <div class="stat"><span>全年综合税负</span><strong id="a-sum-tax-burden">0.00%</strong></div>
+        </div>
+        <div class="summary-box" id="a-summary" style="margin-top: 12px;">等待计算。</div>
+      </div>
+    </section>
+
+    <div class="footer">
+      计算口径参考国家税务总局对《个人所得税扣缴申报管理办法（试行）》的解读，以及居民个人工资、薪金所得预扣预缴适用的预扣率表一。
+      页面仅用于工资测算和填表辅助，不替代正式申报结果。
+      官方依据：
+      <a href="https://www.chinatax.gov.cn/chinatax/n810341/n810760/c3959585/content.html" target="_blank" rel="noreferrer">国家税务总局解读</a>
+      ，
+      <a href="https://12366.chinatax.gov.cn/bzds/068/068-3-1.html" target="_blank" rel="noreferrer">预扣率表一</a>。
+    </div>
+  </main>
+
+  <script src="./vendor/xlsx.full.min.js"></script>
+  <script src="./app.js?v=20260722-collapse-hide-fix-2"></script>
+</body>
+</html>
